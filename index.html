@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cintia's Minesweeper</title>
+    <script type="text/javascript" src="lib/jquery-1.10.1.min.js"></script>
+</head>
+<body>
+<img src="images/small_logo.png">
+<h1>Minesweeper</h1>
+
+<div class="message"></div>
+
+<ul class="controls">
+    <li>
+        <strong>Bombs:</strong>
+        <span id="bombs">0</span>
+    </li>
+    <li>
+        <strong>Time:</strong>
+        <span id="time">00:00:00</span>
+    </li>
+</ul>
+
+<canvas id="game">I am sorry, but you should't be using this browser.</canvas>
+
+<ul class="controls">
+    <li>
+        <select name="level" id="levelSel">
+            <option value="0">Beginner</option>
+            <option value="1">Intermediate</option>
+            <option value="2">Advanced</option>
+        </select>
+    </li>
+    <li>
+        <input type="button" value="Start" id="levelBtn">
+    </li>
+</ul>
+
+<script type="text/javascript" src="js/Game.js"></script>
+
+</body>
+</html>
