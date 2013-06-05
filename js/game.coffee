@@ -202,13 +202,34 @@ convert_num_to_time = (num) ->
   hor = fix_decimal(Math.floor(num / (60 * 60)))
   return hor + ":" + min + ":" + sec
 
-start_game = () ->
-  time = 0
+# set all the level dependent variables and resizes canvas
+set_new_level = (val) ->
+  level = val
   width = levels[level].x * TILE_SIZE
   height = levels[level].y * TILE_SIZE
   bombs = levels[level].bombs
+  canvas.width = width
+  canvas.height = height
+
+start_game = () ->
+  running = true
+  exploded = false
+  won = false
+  time = 0
   draw_table()
   $(".message").text("")
   $("#time").text(convert_num_to_time(time))
 
+$('canvas').mousedown((event) ->
+  # left click
+  if event.which == 1
+    console.log "left click"
+
+  # right click
+  else if event.which == 3
+    console.log "right click"
+
+)
+
+set_new_level(0)
 start_game()
