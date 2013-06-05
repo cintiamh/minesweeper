@@ -163,6 +163,16 @@ draw_table = ->
 # Game Functions
 ###
 
+find_item_in_list = (list, x, y) ->
+  for item in list
+    if item.x == x and item.y == y
+      return true
+  return false
+
+update_bombs = ->
+  if bombs >= 0
+    $("#bombs").text(bombs)
+
 # Generate bombs in random positions
 generate_bombs = (x, y) ->
   bombs_list = []
@@ -170,6 +180,11 @@ generate_bombs = (x, y) ->
   while bombs < levels[level].bombs
     new_x = Math.floor(Math.random() * levels[level].x)
     new_y = Math.floor(Math.random() * levels[level].y)
+    # unless the new coordinates are new and are not the first click pos, add new bomb to list
+    unless find_item_in_list(bombs_list, new_x, new_y) or (new_x == x and new_y == y)
+      bombs_list.push({x: new_x, y: new_y})
+      bombs++
+  update_bombs()
 
 # Get the mouse position inside the canvas
 getMousePos = (canvas, evt) ->
@@ -219,6 +234,7 @@ start_game = () ->
   draw_table()
   $(".message").text("")
   $("#time").text(convert_num_to_time(time))
+  update_bombs()
 
 $('canvas').mousedown((event) ->
   # left click
