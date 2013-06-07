@@ -72,15 +72,15 @@ header {
 }
 
 .sidebar {
-    width: 260px;
+    width: 100%;
     float: left;
     padding: 20px;
 }
 
 .main {
-    width: 660px;
+    width: 100%;
     float: left;
-    padding: 20px;
+    padding: 0 20px;
 }
 
 h1 {
@@ -88,6 +88,11 @@ h1 {
     margin: 0 0 20px 0;
     color: #FF3333;
     font-weight: bold;
+}
+
+ul {
+    width: 100%;
+    float: left;
 }
 
 li {

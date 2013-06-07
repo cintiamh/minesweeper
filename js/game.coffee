@@ -258,6 +258,7 @@ discover_tile = (x, y) ->
 discover_neighbors = (x, y) ->
   neighbors = get_neighbors(x, y)
   for neighbor in neighbors
+    # Verifies if the tile is in a valid position
     if 0 <= neighbor.x < levels[level].x and 0 <= neighbor.y < levels[level].y
       discover_tile(neighbor.x, neighbor.y)
 
