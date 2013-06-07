@@ -3,9 +3,8 @@ TILE_SIZE = 30
 REFRESH_RATE = 120 # ms
 
 # global variables
-running = false
-exploded = false
-won = false
+started = false
+finished = false
 
 time = 0
 level = 0
@@ -169,6 +168,20 @@ find_item_in_list = (list, x, y) ->
       return true
   return false
 
+# transform 1 digit number into string with 2 digits
+fix_decimal = (num) ->
+  unless num >= 10
+    return "0" + num
+  num
+
+# converts the number of seconds into clock display HH:mm:ss
+convert_num_to_time = (num) ->
+  sec = fix_decimal(Math.floor(num % 60))
+  min = fix_decimal(Math.floor(num / 60))
+  hor = fix_decimal(Math.floor(num / (60 * 60)))
+  return hor + ":" + min + ":" + sec
+
+# Update the displayed number for bombs
 update_bombs = ->
   if bombs >= 0
     $("#bombs").text(bombs)
@@ -187,7 +200,7 @@ generate_bombs = (x, y) ->
   update_bombs()
 
 # Get the mouse position inside the canvas
-getMousePos = (canvas, evt) ->
+get_mouse_pos = (evt) ->
   rect = canvas.getBoundingClientRect()
   {x: Math.floor((evt.clientX - rect.left) / TILE_SIZE), y: Math.floor((evt.clientY - rect.top) / TILE_SIZE)}
 
@@ -204,18 +217,95 @@ get_neighbors = (x, y) ->
     { x: x + 1, y: y + 1}
   ]
 
-# transform 1 digit number into string with 2 digits
-fix_decimal = (num) ->
-  unless num >= 10
-    return "0" + num
-  num
+# count the number of neighbors that are bombs
+count_bombs = (x, y) ->
+  count = 0
+  get_neighbors(x, y).map (tile) ->
+    if 0 <= tile.x < levels[level].x and 0 <= tile.y < levels[level].y
+      if find_item_in_list(bombs_list, tile.x, tile.y)
+        count++
+  return count
 
-# converts the number of seconds into clock display HH:mm:ss
-convert_num_to_time = (num) ->
-  sec = fix_decimal(Math.floor(num % 60))
-  min = fix_decimal(Math.floor(num / 60))
-  hor = fix_decimal(Math.floor(num / (60 * 60)))
-  return hor + ":" + min + ":" + sec
+# Function called when left click
+flip_piece = (x, y) ->
+  # check if it s the first piece you click on (generates bombs around it)
+  unless started
+    started = true
+    generate_bombs(x, y)
+  is_flagged = find_item_in_list(flags_list, x, y)
+  is_flipped = find_item_in_list(flipped_list, x, y)
+  is_bomb = find_item_in_list(bombs_list, x, y)
+  if is_bomb
+    # explode
+    explode_bomb()
+  else if !is_flagged and !is_flipped
+    # show
+    discover_tile(x, y)
+
+# discover tiles and its neighbors
+discover_tile = (x, y) ->
+  unless find_item_in_list(flipped_list, x, y) or find_item_in_list(flags_list, x, y)
+    count = count_bombs(x, y)
+    draw_down_button(x, y)
+    flipped_list.push {x:x, y:y}
+    if count == 0
+      # expose neighbors
+      discover_neighbors(x, y)
+    else
+      draw_character(x, y, count, num_colors[count - 1])
+
+# run through the neighbors when it doesnt have any bombs around
+discover_neighbors = (x, y) ->
+  neighbors = get_neighbors(x, y)
+  for neighbor in neighbors
+    if 0 <= neighbor.x < levels[level].x and 0 <= neighbor.y < levels[level].y
+      discover_tile(neighbor.x, neighbor.y)
+
+# Sets the end of game and draw all bombs
+explode_bomb = ->
+  finished = true
+  $(".message").text("You just exploded!")
+  $(".message").addClass("loose")
+  $(".message").show()
+  bombs_list.map (bomb) ->
+    unless find_item_in_list(flags_list, bomb.x, bomb.y)
+      draw_down_button(bomb.x, bomb.y)
+      drawBomb(bomb.x, bomb.y)
+  flags_list.map (flag) ->
+    unless find_item_in_list(bombs_list, flag.x, flag.y)
+      draw_up_button(flag.x, flag.y)
+      drawBomb(flag.x, flag.y)
+      drawWrong(flag.x, flag.y)
+
+# Set a flag
+set_flag = (x, y) ->
+  # When spot is flagged, unflag it
+  if find_item_in_list(flags_list, x, y)
+    temp = []
+    for flag in flags_list
+      unless flag.x == x and flag.y == y
+        temp.push(flag)
+    flags_list = temp
+    draw_up_button(x, y)
+    bombs++
+  # Otherwise, flag it!
+  else
+    if flags_list.length < levels[level].bombs
+      unless find_item_in_list(flipped_list, x, y)
+        flags_list.push({x:x, y:y})
+        drawFlag(x, y)
+        bombs--
+  update_bombs()
+
+# Check if all the right bombs are flagged
+check_end_of_game = ->
+  if flags_list.length == bombs_list.length
+    flags_list.map (flag) ->
+      unless find_item_in_list(bombs_list, flag.x, flag.y)
+        return false
+    return true
+  else
+    return false
 
 # set all the level dependent variables and resizes canvas
 set_new_level = (val) ->
@@ -225,27 +315,57 @@ set_new_level = (val) ->
   bombs = levels[level].bombs
   canvas.width = width
   canvas.height = height
+  draw_table()
+  start_game()
 
+# Set up default values for a new game
 start_game = () ->
-  running = true
-  exploded = false
-  won = false
+  started = false
+  finished = false
   time = 0
   draw_table()
   $(".message").text("")
+  $(".message").removeClass("win")
+  $(".message").removeClass("loose")
+  $(".message").hide()
   $("#time").text(convert_num_to_time(time))
   update_bombs()
 
-$('canvas').mousedown((event) ->
-  # left click
-  if event.which == 1
-    console.log "left click"
+$(document).ready(->
+  # Change the level and start new game when a new level is select in menu
+  $("#levelBtn").on("click", ->
+    level = $("#levelSel").val();
+    set_new_level(level)
+  )
+  # Detect right click for flags
+  $('canvas').on('contextmenu', (event) ->
+    event.preventDefault()
+    mouse_pos = get_mouse_pos(event)
+    set_flag(mouse_pos.x, mouse_pos.y)
+    finished = check_end_of_game()
+    if finished
+      $(".message").text("You WON!")
+      $(".message").addClass("win")
+      $(".message").show()
+  )
+  # Detect left click for flipping
+  $("canvas").on('click', (event) ->
+    event.preventDefault()
+    mouse_pos = get_mouse_pos(event)
+    unless finished
+      flip_piece(mouse_pos.x, mouse_pos.y)
+  )
+  # set first
+  set_new_level(0)
+  start_game()
 
-  # right click
-  else if event.which == 3
-    console.log "right click"
-
+  setInterval(
+    ->
+      unless finished
+        time++
+        $("#time").text(convert_num_to_time(time))
+    1000
+  )
 )
 
-set_new_level(0)
-start_game()
+
