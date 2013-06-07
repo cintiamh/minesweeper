@@ -430,6 +430,9 @@
     started = false;
     finished = false;
     time = 0;
+    bombs_list = [];
+    flags_list = [];
+    flipped_list = [];
     draw_table();
     $(".message").text("");
     $(".message").removeClass("win");
@@ -463,7 +466,6 @@
       }
     });
     set_new_level(0);
-    start_game();
     return setInterval(function() {
       if (!finished) {
         time++;
