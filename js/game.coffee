@@ -242,25 +242,23 @@ flip_piece = (x, y) ->
     # show
     discover_tile(x, y)
 
-# discover tiles and its neighbors
+# Recursive call until it finds a numbered tile (not flagged)
 discover_tile = (x, y) ->
-  unless find_item_in_list(flipped_list, x, y) or find_item_in_list(flags_list, x, y)
-    count = count_bombs(x, y)
-    draw_down_button(x, y)
-    flipped_list.push {x:x, y:y}
-    if count == 0
-      # expose neighbors
-      discover_neighbors(x, y)
-    else
-      draw_character(x, y, count, num_colors[count - 1])
-
-# run through the neighbors when it doesnt have any bombs around
-discover_neighbors = (x, y) ->
-  neighbors = get_neighbors(x, y)
-  for neighbor in neighbors
-    # Verifies if the tile is in a valid position
-    if 0 <= neighbor.x < levels[level].x and 0 <= neighbor.y < levels[level].y
-      discover_tile(neighbor.x, neighbor.y)
+  # first verify if the coordinates are valid
+  if 0 <= x < levels[level].x and 0 <= y < levels[level].y
+    # checks if the tile was already flipped or if is flagged
+    unless find_item_in_list(flipped_list, x, y) or find_item_in_list(flags_list, x, y)
+      count = count_bombs(x, y)
+      draw_down_button(x, y)
+      flipped_list.push {x:x, y:y}
+      # empty tiles expands until it finds one with a number
+      if count == 0
+        # expose neighbors
+        neighbors = get_neighbors(x, y)
+        for neighbor in neighbors
+          discover_tile(neighbor.x, neighbor.y)
+      else
+        draw_character(x, y, count, num_colors[count - 1])
 
 # Sets the end of game and draw all bombs
 explode_bomb = ->
