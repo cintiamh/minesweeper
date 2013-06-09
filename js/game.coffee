@@ -346,7 +346,7 @@ $(document).ready(->
     set_flag(mouse_pos.x, mouse_pos.y)
     finished = check_end_of_game()
     if finished
-      $(".message").text("You WON!")
+      $(".message").text("YOU WIN!")
       $(".message").addClass("win")
       $(".message").show()
   )
